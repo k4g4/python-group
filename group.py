@@ -1,14 +1,17 @@
-'''This module provides the Group class, which models groups from group theory.'''
+'''This module provides the Group class, which models
+finite groups from group theory.'''
 
 from inspect import signature
 from itertools import product
 from functools import total_ordering, reduce
+from math import gcd
 
 __author__ = 'kaga'
 
 @total_ordering
 class Group:
-    '''Create and model a group with a set of elements and an operation over the set.'''
+    '''Create and model a finite group with a set of elements
+    and an operation over the set.'''
 
     def __init__(self, elems, op):
         self._elems = set(elems)
@@ -82,7 +85,33 @@ class Group:
     def is_abelian(self):
         return all(self.op(a, b) == self.op(b, a) for a, b in product(self._elems, repeat=2))
 
-    '''
     def is_cyclic(self):
-        pass
-    '''
+        #The group is cyclic if the order is prime or 1
+        order = len(self._elems)
+        if all(order % i for i in range(2, int(order**0.5)+1)):
+            return True
+
+        #There exists a cyclic subgroup with the same order as the group
+        for a in self._elems:
+            b = self.op(a, a)
+            subgroup_order = 1
+            while a != b:
+                subgroup_order += 1
+                b = self.op(b, a)
+            if order == subgroup_order:
+                return True
+
+        return False
+
+    @classmethod
+    def add_modulo_n(cls, n):
+        op = lambda a, b: (a + b) % n
+        op.__name__ = '+'
+        return cls(range(n), op)
+
+    @classmethod
+    def mul_modulo_n(cls, n):
+        elems = set(a for a in range(n) if gcd(a, n) == 1)
+        op = lambda a, b: (a * b) % n
+        op.__name__ = '*'
+        return cls(elems, op)
